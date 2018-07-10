@@ -1,4 +1,4 @@
-package kafkaclient;
+package com.smallain.kafkaclient;
 
 import org.apache.kafka.clients.producer.*;
 
@@ -11,7 +11,8 @@ public class ProducerModule {
         boolean isAsync = args.length == 0 || !args[0].trim().equalsIgnoreCase("sync");
         Properties props = new Properties();
         //Kafka服务端的主机名和端口号
-        props.put("bootstrap.servers", "192.168.31.101:9092,192.168.31.102:9092,192.168.31.103:9092");
+        //props.put("bootstrap.servers", "192.168.31.101:9092,192.168.31.102:9092,192.168.31.103:9092");
+        props.put("bootstrap.servers", "iz2zea86z2leonw09hpjijz:9092,iz2zea86z2leonw09hpjimz:9092,iz2zea86z2leonw09hpjilz:9092,iz2zea86z2leonw09hpjikz:9092");
         props.put("client.id", "DemoProducer");//客户端ID
 
         //消息key和value都是字节数组，为了将Java对象转化为字节数组，可以配置key.serializer和value.serializer两个序列化器完成转换
@@ -23,6 +24,7 @@ public class ProducerModule {
         String topic = "testkafka";//向指定的topic发送消息
 
         int messageNo = 1;//消息的Key
+
 
         while (true) {
             String messageStr = "Message_" + messageNo;//消息的value
