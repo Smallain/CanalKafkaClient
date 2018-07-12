@@ -125,6 +125,8 @@ public class AbstractCanalClient {
                 connector.subscribe();
                 while (running) {
                     Message message = connector.getWithoutAck(batchSize); // 获取指定数量的数据
+
+
                     long batchId = message.getId();
                     int size = message.getEntries().size();
                     if (batchId == -1 || size == 0) {
@@ -136,40 +138,16 @@ public class AbstractCanalClient {
 
                         //具体处理数据逻辑
                         printSummary(message, batchId, size);
-                        List db_info_list = printEntry(message.getEntries());
+                        List<DataBaseModel> db_info_list = printEntry(message.getEntries());
                         for (int i = 0; i < db_info_list.size(); i++) {
-                            if (i == 0) {
-                                database = db_info_list.get(i).toString();
-                            } else if (i == 1) {
-                                table = db_info_list.get(i).toString();
-                            } else if (i == 2) {
-                                type = db_info_list.get(i).toString().toLowerCase();
-                            } else if (i == 3) {
-                                ts = db_info_list.get(i).toString();
-                            } else if (i == 4) {
-                                data = ((List) db_info_list.get(i));
-                            }
+                            String json = JSON.toJSONString(db_info_list.get(i));
+                            System.out.println("最终转化的json是：" + json);
+                            String kfkServers = "iz2zea86z2leonw09hpjijz:9092,iz2zea86z2leonw09hpjimz:9092,iz2zea86z2leonw09hpjilz:9092,iz2zea86z2leonw09hpjikz:9092";
+                            String clientId = "TestProducer";
 
+                            KafKaProducerFactory kafkaproducers = new KafKaProducerFactory(kfkServers, clientId);
+                            kafkaproducers.pushKafKa("testkafka", 1, json);
                         }
-
-                        DataBaseModel dbm = new DataBaseModel();
-                        dbm.database = database;
-                        dbm.table = table;
-                        dbm.type = type;
-                        dbm.ts = ts;
-                        dbm.data = data;
-                        System.out.println("最终转化的数据库是:" + dbm.database);
-
-                        String json = JSON.toJSONString(dbm);
-
-                        System.out.println("最终转化的json是：" + json);
-
-                        String kfkServers = "iz2zea86z2leonw09hpjijz:9092,iz2zea86z2leonw09hpjimz:9092,iz2zea86z2leonw09hpjilz:9092,iz2zea86z2leonw09hpjikz:9092";
-                        String clientId = "TestProducer";
-
-                        KafKaProducerFactory kafkaproducers = new KafKaProducerFactory(kfkServers, clientId);
-                        kafkaproducers.pushKafKa("testkafka", 1, json);
-
                     }
 
                     connector.ack(batchId); // 提交确认
@@ -213,10 +191,6 @@ public class AbstractCanalClient {
     protected List printEntry(List<Entry> entrys) {
 
         List db_info = new ArrayList<>();
-        String db_info_database;
-        String db_info_table;
-        String db_info_evenType;
-        String db_info_executeTime;
 
         for (Entry entry : entrys) {
             long executeTime = entry.getHeader().getExecuteTime();
@@ -271,35 +245,36 @@ public class AbstractCanalClient {
                                 entry.getHeader().getTableName(), eventType,
                                 String.valueOf(entry.getHeader().getExecuteTime()), String.valueOf(delayTime)});
 
-
-                db_info_database = entry.getHeader().getSchemaName();
-                db_info_table = entry.getHeader().getTableName();
-                db_info_evenType = eventType.toString();
-                db_info_executeTime = String.valueOf(entry.getHeader().getExecuteTime());
-
-                db_info.add(db_info_database);
-                db_info.add(db_info_table);
-                db_info.add(db_info_evenType);
-                db_info.add(db_info_executeTime);
-
-
+                //ddl语义处理
                 if (eventType == EventType.QUERY || rowChage.getIsDdl()) {
                     logger.info(" sql ----> " + rowChage.getSql() + SEP);
                     continue;
                 }
 
+                //dml语义处理
                 for (RowData rowData : rowChage.getRowDatasList()) {
+                    DataBaseModel dbm = new DataBaseModel();
+
+                    dbm.setDatabase(entry.getHeader().getSchemaName());
+                    dbm.setTable(entry.getHeader().getTableName());
+                    dbm.setType(eventType.toString().toLowerCase());
+                    dbm.setTs(String.valueOf(entry.getHeader().getExecuteTime()));
                     if (eventType == EventType.DELETE) {
-                        List dellist = printColumn(rowData.getBeforeColumnsList());
-                        db_info.add(dellist);
+                        Map dellist = printColumn(rowData.getBeforeColumnsList());
+                        dbm.setData(dellist);
+                        db_info.add(dbm);
                     } else if (eventType == EventType.INSERT) {
-                        List inslist = printColumn(rowData.getAfterColumnsList());
-                        db_info.add(inslist);
+                        Map inslist = printColumn(rowData.getAfterColumnsList());
+                        dbm.setData(inslist);
+                        db_info.add(dbm);
                     } else {
-                        List update = printColumn(rowData.getAfterColumnsList());
-                        db_info.add(update);
+                        Map update = printColumn(rowData.getAfterColumnsList());
+                        dbm.setData(update);
+                        db_info.add(dbm);
                     }
+
                 }
+
             }
         }
         return db_info;
@@ -310,8 +285,8 @@ public class AbstractCanalClient {
      *
      * @param columns
      */
-    protected List printColumn(List<Column> columns) {
-        List columnList = new ArrayList();
+    protected Map printColumn(List<Column> columns) {
+        Map columnMap = new HashMap();
         for (Column column : columns) {
             StringBuilder builder = new StringBuilder();
             builder.append(column.getName() + " : " + column.getValue());
@@ -320,14 +295,14 @@ public class AbstractCanalClient {
                 builder.append("    update=" + column.getUpdated());
             }
 
-            columnList.add(column.getName());//列名
-            columnList.add(column.getValue());//列值
+            columnMap.put(column.getName(), column.getValue());//列名//列值
+
 
             builder.append(SEP);
             logger.info(builder.toString());
         }
 
-        return columnList;
+        return columnMap;
     }
 
     public void setConnector(CanalConnector connector) {

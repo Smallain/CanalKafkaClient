@@ -2,13 +2,14 @@ package com.smallain.canalclient.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class DataBaseModel {
     public String database;
     public String table;
     public String type;
     public String ts;
-    public List data;
+    public Map data;
 
     public String getDatabase() {
         return database;
@@ -43,11 +44,11 @@ public class DataBaseModel {
         this.ts = tsinfo;
     }
 
-    public List getData() {
+    public Map getData() {
         return data;
     }
 
-    public void setData(List datainfo) {
+    public void setData(Map datainfo) {
         this.data = datainfo;
     }
 
