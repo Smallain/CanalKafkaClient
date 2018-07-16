@@ -79,12 +79,12 @@ public class AbstractCanalClient {
         this.connector = connector;
     }
 
-    protected void start() {
+    protected void start(final String kfkServers, final String kfkclientId, final String topicKfk) {
         Assert.notNull(connector, "connector is null");
         thread = new Thread(new Runnable() {
 
             public void run() {
-                process();
+                process(kfkServers,kfkclientId,topicKfk);
             }
         });
 
@@ -109,7 +109,7 @@ public class AbstractCanalClient {
         MDC.remove("destination");
     }
 
-    protected void process() {
+    protected void process(String serverskfk,String clientidkfk,String kfktopic) {
         String database = "";
         String table = "";
         String type = "";
@@ -142,11 +142,11 @@ public class AbstractCanalClient {
                         for (int i = 0; i < db_info_list.size(); i++) {
                             String json = JSON.toJSONString(db_info_list.get(i));
                             System.out.println("最终转化的json是：" + json);
-                            String kfkServers = "iz2zea86z2leonw09hpjijz:9092,iz2zea86z2leonw09hpjimz:9092,iz2zea86z2leonw09hpjilz:9092,iz2zea86z2leonw09hpjikz:9092";
-                            String clientId = "TestProducer";
+//                            String kfkServers = "iz2zea86z2leonw09hpjijz:9092,iz2zea86z2leonw09hpjimz:9092,iz2zea86z2leonw09hpjilz:9092,iz2zea86z2leonw09hpjikz:9092";
+//                            String clientId = "TestProducer";
 
-                            KafKaProducerFactory kafkaproducers = new KafKaProducerFactory(kfkServers, clientId);
-                            kafkaproducers.pushKafKa("testkafka", 1, json);
+                            KafKaProducerFactory kafkaproducers = new KafKaProducerFactory(serverskfk, clientidkfk);
+                            kafkaproducers.pushKafKa(kfktopic, 1, json);
                         }
                     }
 

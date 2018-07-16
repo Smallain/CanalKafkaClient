@@ -14,7 +14,7 @@ import com.alibaba.otter.canal.client.CanalConnectors;
  */
 public class ClusterCanalClient extends AbstractCanalClient {
 
-    public ClusterCanalClient(String destination){
+    public ClusterCanalClient(String destination) {
         super(destination);
     }
 
@@ -33,7 +33,12 @@ public class ClusterCanalClient extends AbstractCanalClient {
 
         final ClusterCanalClient clientTest = new ClusterCanalClient(destination);
         clientTest.setConnector(connector);
-        clientTest.start();
+
+        String kfkServers = "iz2zea86z2leonw09hpjijz:9092,iz2zea86z2leonw09hpjimz:9092,iz2zea86z2leonw09hpjilz:9092,iz2zea86z2leonw09hpjikz:9092";
+        String clientId = "TestProducer";
+        String topicKfk = "testkafka";
+
+        clientTest.start(kfkServers, clientId, topicKfk);
 
         Runtime.getRuntime().addShutdownHook(new Thread() {
 
