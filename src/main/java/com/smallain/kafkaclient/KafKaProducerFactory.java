@@ -16,6 +16,9 @@ public class KafKaProducerFactory {
         props.put("retries", "5");
     }
 
+    //TODO KAFKA TOPIC 设计与 Partition设计,针对不同的canal放到不同的topick partition中
+    //String topic, Integer partition, K key, V value
+
     public void pushKafKa(String topicKfK, int messageNoKfK, String messageStrKfK) {
         KafkaProducer producer = new KafkaProducer(props);
         String topic = topicKfK;
@@ -23,6 +26,7 @@ public class KafKaProducerFactory {
         String messageStr = messageStrKfK;
         long startTime = System.currentTimeMillis();
 
+        //异步调用
         producer.send(new ProducerRecord(topic, messageNo, messageStr), new KfKCallBack(startTime, messageNo, messageStr));
         producer.close();
 
