@@ -285,6 +285,9 @@ public class AbstractCanalClient {
      *
      * @param columns
      */
+
+
+
     protected Map printColumn(List<Column> columns) {
         Map columnMap = new HashMap();
         for (Column column : columns) {
@@ -294,7 +297,7 @@ public class AbstractCanalClient {
             if (column.getUpdated()) {
                 builder.append("    update=" + column.getUpdated());
             }
-
+            //TODO 添加city_id 因为在业务系统中各个分校并不区分city_id，所以需要手动区分，并且在hbase中要讲city_id一同考虑为联合主键
             columnMap.put(column.getName(), column.getValue());//列名//列值
 
 
