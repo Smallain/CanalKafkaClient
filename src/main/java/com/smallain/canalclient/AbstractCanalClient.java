@@ -84,7 +84,7 @@ public class AbstractCanalClient {
         thread = new Thread(new Runnable() {
 
             public void run() {
-                process(kfkServers,kfkclientId,topicKfk);
+                process(kfkServers, kfkclientId, topicKfk);
             }
         });
 
@@ -109,7 +109,7 @@ public class AbstractCanalClient {
         MDC.remove("destination");
     }
 
-    protected void process(String serverskfk,String clientidkfk,String kfktopic) {
+    protected void process(String serverskfk, String clientidkfk, String kfktopic) {
         String database = "";
         String table = "";
         String type = "";
@@ -136,6 +136,7 @@ public class AbstractCanalClient {
                         // }
                     } else {
 
+
                         //具体处理数据逻辑
                         printSummary(message, batchId, size);
                         List<DataBaseModel> db_info_list = printEntry(message.getEntries());
@@ -148,6 +149,8 @@ public class AbstractCanalClient {
                             KafKaProducerFactory kafkaproducers = new KafKaProducerFactory(serverskfk, clientidkfk);
                             kafkaproducers.pushKafKa(kfktopic, 1, json);
                         }
+
+
                     }
 
                     connector.ack(batchId); // 提交确认
@@ -285,7 +288,6 @@ public class AbstractCanalClient {
      *
      * @param columns
      */
-
 
 
     protected Map printColumn(List<Column> columns) {
