@@ -8,6 +8,7 @@ import com.alibaba.fastjson.JSON;
 import com.smallain.canalclient.model.DataBaseModel;
 import com.smallain.hdfsclient.HdfsDao;
 import com.smallain.kafkaclient.KafKaProducerFactory;
+import com.smallain.util.MD5Util;
 import org.apache.commons.collections.bidimap.TreeBidiMap;
 import org.apache.commons.lang.SystemUtils;
 import org.slf4j.Logger;
@@ -80,12 +81,12 @@ public class AbstractCanalClient {
         this.connector = connector;
     }
 
-    protected void start(final String kfkServers, final String kfkclientId, final String topicKfk, final String canalDestination, final String hadoopUrl, final String canalCityFilePath) {
+    protected void start(final String kfkServers, final String kfkclientId, final String topicKfk, final String canalDestination, final String hadoopUrl, final String canalCityFilePath,final String canalPartitionFilePath) {
         Assert.notNull(connector, "connector is null");
         thread = new Thread(new Runnable() {
 
             public void run() {
-                process(kfkServers, kfkclientId, topicKfk, canalDestination, hadoopUrl, canalCityFilePath);
+                process(kfkServers, kfkclientId, topicKfk, canalDestination, hadoopUrl, canalCityFilePath,canalPartitionFilePath);
             }
         });
 
@@ -110,7 +111,7 @@ public class AbstractCanalClient {
         MDC.remove("destination");
     }
 
-    protected void process(String serverskfk, String clientidkfk, String kfktopic, String canalDestination, String hadoopUrl, String canalCityFilePath) {
+    protected void process(String serverskfk, String clientidkfk, String kfktopic, String canalDestination, String hadoopUrl, String canalCityFilePath,String canalPartitionFilePath) {
         String database = "";
         String table = "";
         String type = "";
@@ -141,13 +142,32 @@ public class AbstractCanalClient {
                         printSummary(message, batchId, size);
                         List<DataBaseModel> db_info_list = printEntry(message.getEntries(), canalDestination, hadoopUrl, canalCityFilePath);
                         for (int i = 0; i < db_info_list.size(); i++) {
+
+                            DataBaseModel dbm = db_info_list.get(i);
+                            String  table_name = dbm.getTable();
+
                             String json = JSON.toJSONString(db_info_list.get(i));
                             System.out.println("最终转化的json是：" + json);
 //                            String kfkServers = "iz2zea86z2leonw09hpjijz:9092,iz2zea86z2leonw09hpjimz:9092,iz2zea86z2leonw09hpjilz:9092,iz2zea86z2leonw09hpjikz:9092";
 //                            String clientId = "TestProducer";
 
+                            HdfsDao hd = new HdfsDao();
+                            Map canal_city = new TreeMap();
+                            canal_city = hd.readCanalCity(hadoopUrl, canalCityFilePath);
+                            String canal_city_value = canal_city.get(canalDestination).toString();
+
+
+
+                            HdfsDao hd_canal_partition = new HdfsDao();
+                            Map canal_partition = new TreeMap();
+                            canal_partition = hd_canal_partition.readCanalCity(hadoopUrl, canalPartitionFilePath);
+                            String canal_partition_value = canal_partition.get(canal_city_value).toString();
+
+
+                            String kafkaMessageKey = MD5Util.md5HashString(canal_city_value);
+
                             KafKaProducerFactory kafkaproducers = new KafKaProducerFactory(serverskfk, clientidkfk);
-                            kafkaproducers.pushKafKa(kfktopic, 1, json);
+                            kafkaproducers.pushKafKa(table_name,canal_partition_value, kafkaMessageKey, json,serverskfk);
                         }
 
 

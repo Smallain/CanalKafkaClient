@@ -23,18 +23,11 @@ public class KafkaDao {
 
     public void createTopics(String new_topic, int numPartitions, short replicationFactors) {
         AdminClient adminClient = AdminClient.create(properties);
-
-        Boolean isExist = checkTopics(new_topic, adminClient);
-        if (isExist) {
-            System.out.println("topic is already exist!");
-        } else {
-
-            NewTopic newTopic = new NewTopic(new_topic, numPartitions, replicationFactors);
-            Collection<NewTopic> newTopicList = new ArrayList<>();
-            newTopicList.add(newTopic);
-            adminClient.createTopics(newTopicList);
-            adminClient.close();
-        }
+        NewTopic newTopic = new NewTopic(new_topic, numPartitions, replicationFactors);
+        Collection<NewTopic> newTopicList = new ArrayList<>();
+        newTopicList.add(newTopic);
+        adminClient.createTopics(newTopicList);
+        adminClient.close();
     }
 
 
@@ -56,22 +49,22 @@ public class KafkaDao {
     }
 
 
-    public Boolean checkTopics(String topic_name, AdminClient adminClient) {
-
-        Boolean existFlag;
-        ListTopicsResult ltr = adminClient.listTopics();
-
-        try {
-            Set<String> topicNames = ltr.names().get();
-            existFlag = topicNames.contains(topic_name);
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-            existFlag = false;
-        }
-
-        return existFlag;
-
-    }
+//    public Boolean checkTopics(String topic_name, AdminClient adminClient) {
+//
+//        Boolean existFlag;
+//        ListTopicsResult ltr = adminClient.listTopics();
+//
+//        try {
+//            Set<String> topicNames = ltr.names().get();
+//            existFlag = topicNames.contains(topic_name);
+//        } catch (InterruptedException | ExecutionException e) {
+//            e.printStackTrace();
+//            existFlag = false;
+//        }
+//
+//        return existFlag;
+//
+//    }
 
     public void deleteTopics(String topic_name) {
         AdminClient adminClient = AdminClient.create(properties);

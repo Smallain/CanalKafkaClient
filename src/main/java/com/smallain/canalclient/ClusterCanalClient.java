@@ -49,7 +49,7 @@ public class ClusterCanalClient extends AbstractCanalClient {
         String hadoopUrl = parakvMap.get("--hdfs-url").toString();
         String canalSourceFilePath = parakvMap.get("--canal-source-path").toString();
         String canalCityFilePath = parakvMap.get("--canal-city-path").toString();
-
+        String canalPartitionFilePath = parakvMap.get("--canal-partition-path").toString();
 
         // 基于固定canal server的地址，建立链接，其中一台server发生crash，可以支持failover
         // CanalConnector connector = CanalConnectors.newClusterConnector(
@@ -90,7 +90,7 @@ public class ClusterCanalClient extends AbstractCanalClient {
             CanalConnector connector = CanalConnectors.newClusterConnector(zookeeperPath, canalSources.get(i).toString(), "", "");
             final ClusterCanalClient clientTest = new ClusterCanalClient(canalSources.get(i).toString());
             clientTest.setConnector(connector);
-            clientTest.start(kfkServers, clientId, topicKfk,canalSources.get(i).toString(),hadoopUrl,canalCityFilePath);
+            clientTest.start(kfkServers, clientId, topicKfk, canalSources.get(i).toString(), hadoopUrl, canalCityFilePath, canalPartitionFilePath);
             Runtime.getRuntime().addShutdownHook(new Thread() {
 
                 public void run() {

@@ -5,10 +5,10 @@ import org.apache.kafka.clients.producer.RecordMetadata;
 
 public class KfKCallBack implements Callback {
     private final long startTime;//开始发送消息的时间戳
-    private final long key;//消息的key
+    private final String key;//消息的key
     private final String message;//消息的value
 
-    public KfKCallBack(long startTime, int key, String message) {
+    public KfKCallBack(long startTime, String key, String message) {
         this.startTime = startTime;
         this.key = key;
         this.message = message;

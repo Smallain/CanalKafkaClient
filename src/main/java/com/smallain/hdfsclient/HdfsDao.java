@@ -74,4 +74,24 @@ public class HdfsDao {
         }
         return cityMP;
     }
+
+    public Map readCanalPartition(String hdfsUrl, String canalSourceFilePath) throws Exception {
+        Map cityMP = new TreeMap();
+        ArrayList al;
+        HdfsDao hd = new HdfsDao();
+
+        try {
+            al = hd.readCanalSouces(hdfsUrl, canalSourceFilePath);
+            for (int i = 0; i < al.size(); i++) {
+                String city_key = al.get(i).toString().split("=")[0];
+                String city_value = al.get(i).toString().split("=")[1];
+                cityMP.put(city_key, city_value);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return cityMP;
+    }
+
+
 }
