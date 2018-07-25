@@ -6,6 +6,7 @@ import java.util.*;
 
 import com.alibaba.fastjson.JSON;
 import com.smallain.canalclient.model.DataBaseModel;
+import com.smallain.hdfsclient.HdfsDao;
 import com.smallain.kafkaclient.KafKaProducerFactory;
 import org.apache.commons.collections.bidimap.TreeBidiMap;
 import org.apache.commons.lang.SystemUtils;
@@ -79,12 +80,12 @@ public class AbstractCanalClient {
         this.connector = connector;
     }
 
-    protected void start(final String kfkServers, final String kfkclientId, final String topicKfk) {
+    protected void start(final String kfkServers, final String kfkclientId, final String topicKfk, final String canalDestination, final String hadoopUrl, final String canalCityFilePath) {
         Assert.notNull(connector, "connector is null");
         thread = new Thread(new Runnable() {
 
             public void run() {
-                process(kfkServers, kfkclientId, topicKfk);
+                process(kfkServers, kfkclientId, topicKfk, canalDestination, hadoopUrl, canalCityFilePath);
             }
         });
 
@@ -109,7 +110,7 @@ public class AbstractCanalClient {
         MDC.remove("destination");
     }
 
-    protected void process(String serverskfk, String clientidkfk, String kfktopic) {
+    protected void process(String serverskfk, String clientidkfk, String kfktopic, String canalDestination, String hadoopUrl, String canalCityFilePath) {
         String database = "";
         String table = "";
         String type = "";
@@ -136,10 +137,9 @@ public class AbstractCanalClient {
                         // }
                     } else {
 
-
                         //具体处理数据逻辑
                         printSummary(message, batchId, size);
-                        List<DataBaseModel> db_info_list = printEntry(message.getEntries());
+                        List<DataBaseModel> db_info_list = printEntry(message.getEntries(), canalDestination, hadoopUrl, canalCityFilePath);
                         for (int i = 0; i < db_info_list.size(); i++) {
                             String json = JSON.toJSONString(db_info_list.get(i));
                             System.out.println("最终转化的json是：" + json);
@@ -191,7 +191,7 @@ public class AbstractCanalClient {
                 + entry.getHeader().getExecuteTime() + "(" + format.format(date) + ")";
     }
 
-    protected List printEntry(List<Entry> entrys) {
+    protected List printEntry(List<Entry> entrys, String canalDestination, String hadoopUrl, String canalCityFilePath) {
 
         List db_info = new ArrayList<>();
 
@@ -263,15 +263,15 @@ public class AbstractCanalClient {
                     dbm.setType(eventType.toString().toLowerCase());
                     dbm.setTs(String.valueOf(entry.getHeader().getExecuteTime()));
                     if (eventType == EventType.DELETE) {
-                        Map dellist = printColumn(rowData.getBeforeColumnsList());
+                        Map dellist = printColumn(rowData.getBeforeColumnsList(), canalDestination, hadoopUrl, canalCityFilePath);
                         dbm.setData(dellist);
                         db_info.add(dbm);
                     } else if (eventType == EventType.INSERT) {
-                        Map inslist = printColumn(rowData.getAfterColumnsList());
+                        Map inslist = printColumn(rowData.getAfterColumnsList(), canalDestination, hadoopUrl, canalCityFilePath);
                         dbm.setData(inslist);
                         db_info.add(dbm);
                     } else {
-                        Map update = printColumn(rowData.getAfterColumnsList());
+                        Map update = printColumn(rowData.getAfterColumnsList(), canalDestination, hadoopUrl, canalCityFilePath);
                         dbm.setData(update);
                         db_info.add(dbm);
                     }
@@ -290,8 +290,16 @@ public class AbstractCanalClient {
      */
 
 
-    protected Map printColumn(List<Column> columns) {
+    protected Map printColumn(List<Column> columns, String canalDestination, String hadoopUrl, String canalCityFilePath) {
         Map columnMap = new HashMap();
+        HdfsDao hd = new HdfsDao();
+        Map canal_city = new TreeMap();
+
+        try {
+            canal_city = hd.readCanalCity(hadoopUrl, canalCityFilePath);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         for (Column column : columns) {
             StringBuilder builder = new StringBuilder();
             builder.append(column.getName() + " : " + column.getValue());
@@ -306,6 +314,9 @@ public class AbstractCanalClient {
             builder.append(SEP);
             logger.info(builder.toString());
         }
+        String canal_city_value = canal_city.get(canalDestination).toString();
+        //添加city_id操作
+        columnMap.put("city_id", canal_city_value);
 
         return columnMap;
     }
